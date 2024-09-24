@@ -3,59 +3,63 @@ import { Server } from 'http';
 import * as handler from "./class/websockethandler";
 
 export default class WSSignaling {
-  server: Server;
-  wss: websocket.Server;
+	server: Server;
+	wss: websocket.Server;
 
-  constructor(server: Server, mode: string) {
-    this.server = server;
-    this.wss = new websocket.Server({ server });
-    handler.reset(mode);
+	constructor(server: Server, mode: string) {
+		this.server = server;
+		this.wss = new websocket.Server({ server });
+		handler.reset(mode);
 
-    this.wss.on('connection', (ws: WebSocket) => {
+		this.wss.on('connection', (ws: WebSocket) => {
 
-      handler.add(ws);
+			handler.add(ws);
 
-      ws.onclose = (): void => {
-        handler.remove(ws);
-      };
+			ws.onopen = (): void => {
+				console.log("On Open");
+			};
 
-      ws.onmessage = (event: MessageEvent): void => {
+			ws.onclose = (): void => {
+				handler.remove(ws);
+			};
 
-        // type: connect, disconnect JSON Schema
-        // connectionId: connect or disconnect connectionId
+			ws.onmessage = (event: MessageEvent): void => {
 
-        // type: offer, answer, candidate JSON Schema
-        // from: from connection id
-        // to: to connection id
-        // data: any message data structure
+				// type: connect, disconnect JSON Schema
+				// connectionId: connect or disconnect connectionId
 
-        const msg = JSON.parse(event.data);
-        if (!msg || !this) {
-          return;
-        }
+				// type: offer, answer, candidate JSON Schema
+				// from: from connection id
+				// to: to connection id
+				// data: any message data structure
 
-        console.log(msg);
+				const msg = JSON.parse(event.data);
+				if (!msg || !this) {
+					return;
+				}
 
-        switch (msg.type) {
-          case "connect":
-            handler.onConnect(ws, msg.connectionId);
-            break;
-          case "disconnect":
-            handler.onDisconnect(ws, msg.connectionId);
-            break;
-          case "offer":
-            handler.onOffer(ws, msg.data);
-            break;
-          case "answer":
-            handler.onAnswer(ws, msg.data);
-            break;
-          case "candidate":
-            handler.onCandidate(ws, msg.data);
-            break;
-          default:
-            break;
-        }
-      };
-    });
-  }
+				console.log(msg);
+
+				switch (msg.type) {
+					case "connect":
+						handler.onConnect(ws, msg.connectionId);
+						break;
+					case "disconnect":
+						handler.onDisconnect(ws, msg.connectionId);
+						break;
+					case "offer":
+						handler.onOffer(ws, msg.data);
+						break;
+					case "answer":
+						handler.onAnswer(ws, msg.data);
+						break;
+					case "candidate":
+						handler.onCandidate(ws, msg.data);
+						break;
+					default:
+						break;
+				}
+			};
+		});
+	}
 }
